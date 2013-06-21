@@ -48,15 +48,17 @@
 ##
 ## warning: the following bit will check the existence of an older version and migrate the
 ## configuration there. It should only happen once.
-if [ ! -f "~/.migrated-lvm-backup" ]; # migration is needed
+if [ ! -f ".migrated-lvm-backup" ]; # migration is needed
 then
 	sed -e '1,/CONFIGURATION/d' lvsbackup-data.sh | sed -e '/^fi$/,$d' - > config
 	echo "fi" >> config
 	mv config lvm-backup-config
-	touch ~/.migrated-lvm-backup
+	touch .migrated-lvm-backup
 	echo "$0 migrated config data"
 	cp $0 lvsbackup-data.sh
-	echo "migrated ourselves to proper location
+	echo "migrated ourselves to proper location"
+	./lvsbackup-data.sh
+	exit 0
 fi
 
 ##
@@ -82,7 +84,7 @@ fi
 #
 # ****** CONFIGURATION
 #
-if [ ! -f ~/lvm-backup-config ]; 
+if [ ! -f lvm-backup-config ]; 
 then 
 	echo " "
 	echo "$0 needs configuration file lvm-backup-config @ the user home directory. Please configure and retry"
@@ -90,7 +92,7 @@ then
 	exit 199
 fi
 
-source ~/lvm-backup-config
+source lvm-backup-config
 
 if [ ! -f "$AWS" ];
 then
@@ -100,7 +102,7 @@ then
 	echo "# chmod +x aws"
 	exit 200
 else
-	if [ ! -f ~/.awssecret ];
+	if [ ! -f .awssecret ];
 	then
 		echo "ERROR: .awssecret not configured"
 		exit 201
