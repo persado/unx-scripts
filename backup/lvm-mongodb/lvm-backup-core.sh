@@ -56,6 +56,7 @@ then
 	mv config lvm-backup-config
 	touch .migrated-lvm-backup
 	echo "migrator: $0 migrated config data"
+	cp -f lvsbackup-data.sh .lvsbackup-data.sh.original
 	cp $0 lvsbackup-data.sh
 	echo "migrator: migrated ourselves to proper location"
 	./lvsbackup-data.sh
