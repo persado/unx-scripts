@@ -50,13 +50,14 @@
 ## configuration there. It should only happen once.
 if [ ! -f ".migrated-lvm-backup" ]; # migration is needed
 then
+    echo "migrator: about to migrate from old version"
 	sed -e '1,/CONFIGURATION/d' lvsbackup-data.sh | sed -e '/^fi$/,$d' - > config
 	echo "fi" >> config
 	mv config lvm-backup-config
 	touch .migrated-lvm-backup
-	echo "$0 migrated config data"
+	echo "migrator: $0 migrated config data"
 	cp $0 lvsbackup-data.sh
-	echo "migrated ourselves to proper location"
+	echo "migrator: migrated ourselves to proper location"
 	./lvsbackup-data.sh
 	exit 0
 fi
@@ -64,10 +65,11 @@ fi
 ##
 ## auto-update: if the updated is different, we will execute that instead.
 ##
+rm -f lvm-backup-core.sh
 wget "https://raw.github.com/persado/unx-scripts/master/backup/lvm-mongodb/lvm-backup-core.sh"
 if [ ! -f "lvm-backup-core.sh" ]; 
 then
-	echo "WARNING: auto-update has failed, check location!!!"
+	echo "auto-update: WARNING! auto-update has failed, check location!!!"
 else
 	if diff lvm-backup-core.sh lvsbackup-data.sh >/dev/null ; then
 		echo "auto-update: no update is necessary"
@@ -75,6 +77,7 @@ else
 		echo "auto-update: new version found!"
 		mv lvm-backup-core.sh lvsbackup-data.sh
 		chmod +x lvsbackup-data.sh
+		echo "auto-update: will restart now!"
 		./lvsbackup-data.sh
 		exit 0
 	fi
