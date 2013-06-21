@@ -1,0 +1,85 @@
+# default config file
+
+#set the locale correctly
+export LANG=en_US.UTF-8
+
+#
+# setting the paranoid mode to "Y" will make this script want to
+# perform an fsyncLock() on your mongo process. Note that if
+# your mongo is a PRIMARY you're effectively locking out all writes
+# for the duration of the snapshot creation (1-30 sec). Some
+# apps may not handle this well.
+PARANOIDMODE="Y"
+
+#
+# setting this to Y will make the script fail if this is not a
+# secondary. This is a necessary precaution since doing this on a
+# primary will make the system deny writes for a period of time
+FAILIFPRIMARY="Y"
+
+
+# day used for the snapshot location info
+DATE=`date +"%a"|tr '[A-Z]' '[a-z]'`
+
+# BACKUPSRC is the location of the data (inside the snapshot volume)
+BACKUPSRC=/data/mongo-node
+
+# BACKUPVOL is the volume to snapshot
+BACKUPVOL=/dev/vg0/lv_data
+
+# BACKUPSNAP is the new snapshot, created out of the $BACKUPVOL plus the day
+BACKUPSNAP="${BACKUPVOL}_snap_${DATE}"
+
+# BACKUPSNAPMOUNT is where to mount the snapshot (directory will be created)
+BACKUPSNAPMOUNT=/ephemeral/backup-data/snap
+
+# BACKUPTARGET is the mountpoint of your EBS backup volume. This should be
+# mounted and have space for your backup.
+BACKUPTARGET=/ephemeral/backup-data
+
+# SNAPSIZE is the size of the SNAPSHOT. Check lvm documentation and size accordingly
+SNAPSIZE="50GB"
+
+# OPTS contains options for rsync.
+# consult the man page of rsync for details.
+RSYNCOPTS="-aWHPrx --delete --inplace -p -vv " # remove -vv if too verbose for you
+
+# mongo executable location
+MONGO="/opt/mongodb/bin/mongo"
+
+# host and port to connect. /admin is appended, so something should be here.
+HOSTPORT="localhost:27017"
+# OPTIONAL - if another mongo (e.g. Config server) runs at the same location (BACKUPVOL).
+# It will be backed up also, so needs to also freeze.
+HOSTPORTC="localhost:27021"
+
+# mount options
+# XFS - if nouuid is not used, it will not mount
+# http://www.miljan.org/main/2009/11/16/lvm-snapshots-and-xfs/
+MOUNTOPTS=" -t xfs -o nouuid "
+
+
+#################################
+## S3 STUFF
+##
+#################################
+S3BUCKET="ec2-mcs-ie-backups"
+
+# location of aws executable:
+AWS=/root/aws
+
+
+if [ ! -f "$AWS" ];
+then
+	echo " "
+	echo "lvsbackup needs AWS script for AWS connectivity. Install via the following commands:"
+	echo "# curl https://raw.github.com/timkay/aws/master/aws -o aws "
+	echo "# chmod +x aws"
+	exit 200
+else
+	if [ ! -f ~/.awssecret ];
+	then
+		echo "ERROR: .awssecret not configured"
+		exit 201
+	fi
+fi
