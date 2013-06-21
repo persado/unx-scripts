@@ -59,7 +59,7 @@ else
 		echo "auto-update: new version found!"
 		mv lvm-backup-core.sh lvsbackup-data.sh
 		chmod +x lvsbackup-data.sh
-		$0
+		./lvsbackup-data.sh
 		exit 0
 	fi
 fi
