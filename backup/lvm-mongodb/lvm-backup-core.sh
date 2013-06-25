@@ -151,6 +151,13 @@ unmountSnapshot() {
 }
 
 #
+# updates the locked variable with a 'islocked' check
+#
+checkLocked() {
+	LOCKED=`$MONGO $1/admin --quiet --eval "printjson(db.currentOp().fsyncLock)"`
+}
+
+#
 # if PARANOIDMODE is "Y" then this will ask
 # your mongo to clean up and flush everything to disk
 # This is the safest option by far - but in the backup you still
@@ -159,17 +166,25 @@ unmountSnapshot() {
 fsyncLock() {
 	if [ "x$PARANOIDMODE" == "xY" ]
 	then
-		echo "db.fsyncLock(); " > script.js
-		$MONGO $1/admin script.js
-		RET=$?
-		if [ $RET = 0 ]
-		then
- 			echo "PARANOID: Locked mongodb on $1"
+		checkLocked $1
+		if [ "$LOCKED" == "true" ] 
+		then 
+			echo "********************************************************************"
+			echo "DB IS LOCKED ALREADY. NOT TRYING TO LOCK AGAIN"
+			echo "********************************************************************"
 		else
-			echo "********************************************************************"
-			echo "PARANOID: Failed to lock $1, (got $RET back) PANIC!"
-			echo "********************************************************************"
-			#exit $RET
+			echo "db.fsyncLock(); " > script.js
+			$MONGO $1/admin script.js
+			RET=$?
+			if [ $RET -eq 0 ]
+			then
+	 			echo "PARANOID: Locked mongodb on $1"
+			else
+				echo "********************************************************************"
+				echo "PARANOID: Failed to lock $1, (got $RET back) PANIC!"
+				echo "********************************************************************"
+				#exit $RET
+			fi
 		fi
 	fi
 }
@@ -182,17 +197,25 @@ fsyncLock() {
 unlock() {
 	if [ "x$PARANOIDMODE" == "xY" ]
 	then
-		echo "db.fsyncUnlock(); " > script.js
-		$MONGO $1/admin script.js
-		RET=$?
-		if [ $RET = 0 ]
-		then
- 			echo "PARANOID: Unlocked mongodb" on $1
+		checkLocked $1
+		if [ "$LOCKED" == "false" ] 
+		then 
+			echo "********************************************************************"
+			echo "DB IS UNLOCKED. NOT TRYING TO UNLOCK"
+			echo "********************************************************************"
 		else
-			echo "********************************************************************"
-			echo "PARANOID: Failed to unlock $1, (got $RET back) PANIC!"
-			echo "********************************************************************"
-			#exit $RET
+			echo "db.fsyncUnlock(); " > script.js
+			$MONGO $1/admin script.js
+			RET=$?
+			if [ $RET -eq 0 ]
+			then
+	 			echo "PARANOID: Unlocked mongodb" on $1
+			else
+				echo "********************************************************************"
+				echo "PARANOID: Failed to unlock $1, (got $RET back) PANIC!"
+				echo "********************************************************************"
+				#exit $RET
+			fi
 		fi
 	fi
 
@@ -204,28 +227,46 @@ unlock() {
 createAndMountSnapshot() {
 
 	fsyncLock "$HOSTPORT"
-	#fsyncLock "$HOSTPORTC"
-
+	
+	if [ "xx$HOSTPORTC" == "xx" ] 
+	then 
+		echo "Additional Host not defined"
+	else 
+		fsyncLock "$HOSTPORTC"
+	fi
+	
 	/sbin/lvcreate -L$SNAPSIZE -s -n $BACKUPSNAP $BACKUPVOL
 	RET=$?
-	if [ $RET = 0 ]
+	if [ $RET -eq 0 ]
  	then
 		echo "Snapshot $BACKUPSNAP created"
 		unlock "$HOSTPORT"
-		#unlock "$HOSTPORTC"
+		if [ "xx$HOSTPORTC" == "xx" ] 
+		then 
+			echo "Additional Host not defined"
+		else 
+			unlock "$HOSTPORTC"
+		fi
 	else
 		echo "Snapshot $BACKUPSNAP failed!!"
 		unlock "$HOSTPORT"
-		#unlock "$HOSTPORTC"
+		if [ "xx$HOSTPORTC" == "xx" ] 
+		then 
+			echo "Additional Host not defined"
+		else 
+			unlock "$HOSTPORTC"
+		fi
 		exit $RET
 	fi
+	
+	
 	if [ ! -d $BACKUPSNAPMOUNT ]
 	then
 		mkdir $BACKUPSNAPMOUNT
 	fi
 	mount $MOUNTOPTS $BACKUPSNAP $BACKUPSNAPMOUNT
 	RET=$?
-	if [ $RET = 0 ]
+	if [ $RET -eq 0 ]
 	then
 		echo "Mounted $BACKUPSNAP on $BACKUPSNAPMOUNT successfully"
 	else
@@ -239,7 +280,7 @@ tgzBackup() {
 	mkdir -p $BACKUPTARGET/backup
 	rm -fr $BACKUPTARGET/backup/current.tgz
 	tar cvfz $BACKUPTARGET/backup/current.tgz $BACKUPSNAPMOUNT/*
-	if [ $? = 0 ]
+	if [ $? -eq 0 ]
 	then
 		echo "tgz backup completed at $BACKUPTARGET/backup/current.tgz"
 		ORIGFILE="$BACKUPTARGET/backup/current.tgz"
@@ -267,29 +308,29 @@ s3copy() {
 		echo "$FNAME not found, fail to copy!!!"
 		exit 205
 	fi
-	$AWS put "$S3BUCKET" "$FNAME"
-	if [ $? = 0 ]
+	$AWS put "$S3BUCKET/$DATE/$FNAME" "$FNAME"
+	if [ $? -eq 0 ]
 	then
-		echo "s3put succeeded! File $FINALFILE is now in $S3BUCKET "
+		echo "s3put succeeded! File $FINALFILE is now in $S3BUCKET/$DATE "
 	else
 		echo "s3put failed!!!!!!! will retry once:"
-		$AWS put "$S3BUCKET" "$FNAME"
-		if [ $? = 0 ]
+		$AWS put "$S3BUCKET/$DATE/$FNAME" "$FNAME"
+		if [ $? -eq 0 ]
         	then
-                	echo "s3put succeeded! File $FINALFILE is now in $S3BUCKET "
+                	echo "s3put succeeded! File $FINALFILE is now in $S3BUCKET/$DATE "
         	else
                 	echo "s3put failed!!!!!!! - no more retries - backup not in S3"
 		fi
 	fi
-	if [ "$KEEPWEEKLY" = "Y" ]
+	if [ "$KEEPWEEKLY" == "Y" ]
 	then
-		if [ "$DATE" = "sun" ]
+		if [ "$DATE" == "sun" ]
 		then
 			WEEK=`date +%W`
 			WEEKFILE="$BACKUPTARGET/backup/backup-`hostname -s`-week$WEEK.tgz"
 			rm -f $WEEKFILE
 			cp "$FINALFILE" "$WEEKFILE"
-			$AWS copy "$S3BUCKET/$WEEKFILE" "/$S3BUCKET/$FINALFILE"
+			$AWS put "$S3BUCKET/$WEEK/$FNAME" "$FNAME"
 			echo "Copied $FINALFILE as week backup of week $WEEK: $WEEKFILE"
 		fi
 	fi
@@ -299,7 +340,7 @@ s3copy() {
 rsyncBackup() {
 
 	/usr/bin/rsync $RSYNCOPTS $BACKUPSNAPMOUNT $BACKUPTARGET/backup
-	if [ $? = 0 ]
+	if [ $? -eq 0 ]
 	then
 		echo "Rsync backup completed."
 	else
