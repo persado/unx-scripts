@@ -84,6 +84,28 @@ else
 	fi
 fi
 
+##
+## logrotate configuration - if logrotate stuff not found, we add
+## to the daily cron trigger
+##
+if [ ! -f "/etc/logrotate.d/mongodb" ];
+then
+	cat > /etc/logrotate.d/mongodb <<EOF
+/applogs/mongo/mongodb*.log {
+       daily
+       rotate 15
+       copytruncate
+       delaycompress
+       compress
+       notifempty
+       missingok
+}
+EOF
+	echo "logrotate configuration added at /etc/logrotate.d/mongodb"
+fi
+
+
+
 
 #
 # ****** CONFIGURATION
