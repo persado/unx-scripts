@@ -110,7 +110,7 @@ fi
 #
 # ****** CONFIGURATION
 #
-if [ ! -f lvm-backup-config ]; 
+if [ ! -f "lvm-backup-config" ]; 
 then 
 	echo " "
 	echo "$0 needs configuration file lvm-backup-config @ the user home directory. Please configure and retry"
@@ -128,7 +128,7 @@ then
 	echo "# chmod +x aws"
 	exit 200
 else
-	if [ ! -f .awssecret ];
+	if [ ! -f ".awssecret" ];
 	then
 		echo "ERROR: .awssecret not configured"
 		exit 201
