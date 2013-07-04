@@ -45,6 +45,12 @@
 # is still alive as an indication that the script is still working.
 #
 
+
+echo "About to start, this script will pivot to the root home"
+cd /root
+echo "Now at `pwd` - reading config"
+
+
 ##
 ## warning: the following bit will check the existence of an older version and migrate the
 ## configuration there. It should only happen once.
