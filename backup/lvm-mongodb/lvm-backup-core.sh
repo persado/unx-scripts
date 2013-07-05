@@ -93,24 +93,30 @@ fi
 ##
 ## logrotate configuration - if logrotate stuff not found, we add
 ## to the daily cron trigger
+## to change the configuration (reapplying it) just increase the 
+## version check number below
+LOGROTATE_VERSION=1
 ##
-if [ ! -f "/etc/logrotate.d/mongodb" ];
+if [ ! -f ".logrotate.v$LOGROTATE_VERSION" ];
 then
 	cat > /etc/logrotate.d/mongodb <<EOF
-/applogs/mongo/mongodb*.log {
-       daily
-       rotate 15
-       copytruncate
-       delaycompress
-       compress
-       notifempty
-       missingok
+/applogs/mongo/mongo*.log {
+	daily
+	missingok
+	rotate 7
+	compress
+	delaycompress
+	notifempty
+	create 640 mongodb mongodb
+	sharedscripts
+	postrotate
+		killall -SIGUSR1 `pidof mongod`
+		find /applogs/mongo/ -type f -regex ".*\.\(log.[0-9].*-[0-9].*\)" -exec rm {} \;
+	endscript
 }
 EOF
 	echo "logrotate configuration added at /etc/logrotate.d/mongodb"
 fi
-
-
 
 
 #
