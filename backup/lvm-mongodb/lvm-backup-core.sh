@@ -116,6 +116,8 @@ then
 }
 EOF
 	echo "logrotate configuration added at /etc/logrotate.d/mongodb"
+	rm -f ".logrotate.v*"
+	touch ".logrotate.v$LOGROTATE_VERSION"
 fi
 
 
