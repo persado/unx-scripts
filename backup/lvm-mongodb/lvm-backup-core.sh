@@ -95,11 +95,11 @@ fi
 ## to the daily cron trigger
 ## to change the configuration (reapplying it) just increase the 
 ## version check number below
-LOGROTATE_VERSION=1
+LOGROTATE_VERSION=2
 ##
 if [ ! -f ".logrotate.v$LOGROTATE_VERSION" ];
 then
-	cat > /etc/logrotate.d/mongodb <<EOF
+	cat > /etc/logrotate.d/mongodb <<"EOF"
 /applogs/mongo/mongo*.log {
 	daily
 	missingok
