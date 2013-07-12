@@ -95,7 +95,7 @@ fi
 ## to the daily cron trigger
 ## to change the configuration (reapplying it) just increase the 
 ## version check number below
-LOGROTATE_VERSION=2
+LOGROTATE_VERSION=3
 ##
 if [ ! -f ".logrotate.v$LOGROTATE_VERSION" ];
 then
@@ -107,15 +107,15 @@ then
 	compress
 	delaycompress
 	notifempty
-	create 640 mongodb mongodb
+	create 640 mongo mongo
 	sharedscripts
 	postrotate
-		killall -SIGUSR1 `pidof mongod`
+		kill -SIGUSR1 `pidof mongod`
 		find /applogs/mongo/ -type f -regex ".*\.\(log.[0-9].*-[0-9].*\)" -exec rm {} \;
 	endscript
 }
 EOF
-	echo "logrotate configuration added at /etc/logrotate.d/mongodb"
+	echo "logrotate v$LOGROTATE_VERSION configuration added at /etc/logrotate.d/mongodb"
 	rm -f ".logrotate.v*"
 	touch ".logrotate.v$LOGROTATE_VERSION"
 fi
