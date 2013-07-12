@@ -110,8 +110,8 @@ then
 	create 640 mongo mongo
 	sharedscripts
 	postrotate
-		kill -SIGUSR1 `pidof mongod`
-		find /applogs/mongo/ -type f -regex ".*\.\(log.[0-9].*-[0-9].*\)" -exec rm {} \;
+		/bin/kill -SIGUSR1 `/sbin/pidof mongod`
+		/bin/find /applogs/mongo/ -type f -regex ".*\.\(log.[0-9].*-[0-9].*\)" -exec rm {} \;
 	endscript
 }
 EOF
