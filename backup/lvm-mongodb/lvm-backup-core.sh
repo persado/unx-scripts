@@ -335,9 +335,12 @@ tgzBackup() {
 }
 
 
+#variable holds how many retries we are willing to attempt for S3 copy
+# TODO email if failed!
+GLOBAL_RETRIES_S3=5
 
 s3copy() {
-	echo "About to copy $FINALFILE to S3"
+	echo "About to copy $FINALFILE to S3: $GLOBAL_RETRIES_S3 attempts left"
 	cd $BACKUPTARGET/backup
 	if [ ! -f $FNAME ]
 	then
@@ -349,13 +352,11 @@ s3copy() {
 	then
 		echo "s3put succeeded! File $FINALFILE is now in $S3BUCKET/$DATE "
 	else
-		echo "s3put failed!!!!!!! will retry once:"
-		$AWS put "$S3BUCKET/$DATE/$FNAME" "$FNAME"
-		if [ $? -eq 0 ]
-        	then
-                	echo "s3put succeeded! File $FINALFILE is now in $S3BUCKET/$DATE "
-        	else
-                	echo "s3put failed!!!!!!! - no more retries - backup not in S3"
+		echo "s3put failed!!!!!!! will retry $GLOBAL_RETRIES_S3 more times"
+		if [[ $GLOBAL_RETRIES_S3 > 0 ]]; 
+			GLOBAL_RETRIES_S3=$(($GLOBAL_RETRIES_S3 - 1))
+                        /bin/sleep 1m
+			s3copy
 		fi
 	fi
 	if [ "$KEEPWEEKLY" == "Y" ]
