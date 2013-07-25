@@ -353,7 +353,8 @@ s3copy() {
 		echo "s3put succeeded! File $FINALFILE is now in $S3BUCKET/$DATE "
 	else
 		echo "s3put failed!!!!!!! will retry $GLOBAL_RETRIES_S3 more times"
-		if [[ $GLOBAL_RETRIES_S3 > 0 ]]; 
+		if [[ $GLOBAL_RETRIES_S3 > 0 ]] ;
+                then 
 			GLOBAL_RETRIES_S3=$(($GLOBAL_RETRIES_S3 - 1))
                         /bin/sleep 1m
 			s3copy
