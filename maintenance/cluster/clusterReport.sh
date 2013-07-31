@@ -36,16 +36,16 @@ function isPrimary() {
    ssh mongo@$1 \
      "/opt/mongodb/bin/mongo localhost:27017/admin --quiet --eval 'rs.isMaster().secondary'  " > .tmp 2>/dev/null
    secondary=`cat .tmp`
-   if [ $secondary == "true" ] ;
+   if [ "$secondary" = "true" ] ;
    then 
       PRIMARY=0
       echo -n " [SECONDARY] " >> $1.log
       echo -n "$1 is SECONDARY - "
       if [[ $CAN_COMPACT > 0 ]] ; 
       then 
-         echo -n "CAN BE AUTO-COMPACTED"
+         echo  "CAN BE AUTO-COMPACTED"
       else 
-         echo -n "COMPACT NOT POSSIBLE"
+         echo  "COMPACT NOT POSSIBLE"
       fi
    else
       PRIMARY=1
@@ -58,6 +58,10 @@ function compactSecondary() {
    then
       echo " ---> adding $1 to compact configuration"
       echo "$1" >> compact.cfg
+   elif [[ $CAN_COMPACT < 1 && $PRIMARY < 1 ]] ;
+   then
+      echo " ---> $1 is not to be compacted automatically"
+      echo "#$1" >> compact.cfg
    fi
 }
 
