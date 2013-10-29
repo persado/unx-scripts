@@ -38,6 +38,7 @@ function isPrimary() {
    secondary=`cat .tmp`
    if [ "$secondary" = "true" ] ;
    then 
+      echo "$1 [S]"
       PRIMARY=0
       echo -n " [SECONDARY] " >> $1.log
       echo -n "$1 is SECONDARY - "
@@ -48,6 +49,7 @@ function isPrimary() {
          echo  "COMPACT NOT POSSIBLE"
       fi
    else
+      echo "$1 [P]"
       PRIMARY=1
       echo " [PRIMARY] " >> $1.log
    fi
