@@ -5,6 +5,7 @@ This script connects to the localhost ActiveMQ admin interface and checks the si
 
 It should be installed in the ActiveMQ users' crontab with an entry similar to this one:
 
-{plain}
+
+```
 */10 * * * * cd /home/activemq/purgeDLQ && ./purge.sh > purge.log 2> /dev/null
-{plain}
+```
