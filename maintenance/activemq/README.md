@@ -9,7 +9,7 @@ It should be installed in the ActiveMQ users' crontab with an entry similar to t
 */10 * * * * cd /home/activemq/purgeDLQ && ./purge.sh > purge.log 2> /dev/null
 ```
 
-for different queues, you need additional entries like the one below. It will purge if queue mcs.outbound.smsmt.claro_com_br.DLQ goes over 20000 messages.
+for different queues, you need additional entries like the one below. In this example, the script will purge if queue mcs.outbound.smsmt.claro_com_br.DLQ goes over 20000 messages.
 
 ```
 */10 * * * * cd /home/activemq/purgeDLQ && ./purge.sh mcs.outbound.smsmt.claro_com_br.DLQ 20000 > purge.log 2> /dev/null
